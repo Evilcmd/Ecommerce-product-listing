@@ -27,11 +27,12 @@ Backend for a product listing page for a small shop (~100 items) through which t
 
 ## API Endpoints
 
-General Use: (without auth)
+### General Use: (without auth)
     GET /                 : returns hello world
     GET /products         : returns all the product details for all the products
     GET /products/{id}    : returns the product details for the specified product
-Admin: (with auth)
+    
+### Admin: (with auth)
     POST /products        : adds a new product and returns the stauts
     PATCH /products/{id}  : updates the product details for a specified product id and returns the stauts
     DELETE /products/{id} : deletes the product with specified product id and returns the stauts
