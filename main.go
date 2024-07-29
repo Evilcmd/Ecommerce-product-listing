@@ -20,6 +20,18 @@ func main() {
 
 	// General Routes
 	router.HandleFunc("GET /", rootEndpoint)
+	router.HandleFunc("GET /products", getAllProducts)
+	router.HandleFunc("GET /products/{id}", getOneProduct)
+
+	// Admin Routes
+	adminRouter := http.NewServeMux()
+	adminRouter.HandleFunc("POST /products/{id}", addProduct)
+	adminRouter.HandleFunc("PATCH /products/{id}", updateProduct)
+	adminRouter.HandleFunc("DELETE /products/{id}", deleteProduct)
+	adminHandler := authenticate(adminRouter) // wrap the admin router in authentication middlerware
+
+	// make the router handle the admin routes
+	router.Handle("/", adminHandler)
 
 	server := http.Server{
 		Addr:    fmt.Sprintf(":%v", port),
