@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/Evilcmd/Ecommerce-product-listing/internal/database/postgres"
 	"github.com/google/uuid"
@@ -98,6 +99,8 @@ func (apiCfg *APIconfig) updateProduct(res http.ResponseWriter, req *http.Reques
 		}
 	}
 
+	apiCfg.redisClient.Expire(context.Background(), id.String(), time.Millisecond)
+
 	respondWithJson(res, 200, "OK")
 
 }
@@ -115,6 +118,8 @@ func (apiCfg *APIconfig) deleteProduct(res http.ResponseWriter, req *http.Reques
 		respondWithError(res, 406, fmt.Sprintf("error deleting product from database: %v", err.Error()))
 		return
 	}
+
+	apiCfg.redisClient.Expire(context.Background(), id.String(), time.Millisecond)
 
 	respondWithJson(res, 200, "ok")
 }

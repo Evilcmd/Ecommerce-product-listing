@@ -9,11 +9,13 @@ import (
 	"github.com/Evilcmd/Ecommerce-product-listing/internal/database/postgres"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/redis/go-redis/v9"
 )
 
 type APIconfig struct {
-	DbQueries *postgres.Queries
-	jwtSecret string
+	DbQueries   *postgres.Queries
+	redisClient *redis.Client
+	jwtSecret   string
 }
 
 type lbConfig struct {
@@ -25,10 +27,12 @@ func main() {
 	godotenv.Load()
 	dbUrl := os.Getenv("DBURL")
 	JWT_SECRET := os.Getenv("JWT_SECRET")
-	// port := os.Getenv("PORT")
-	// if len(os.Args) > 1 {
-	// 	port = os.Args[1]
-	// }
+
+	redisCliet := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "",
+		DB:       0,
+	})
 
 	db, err := sql.Open("postgres", dbUrl)
 	if err != nil {
@@ -38,8 +42,9 @@ func main() {
 
 	dbQeries := postgres.New(db)
 	apiConfig := APIconfig{
-		DbQueries: dbQeries,
-		jwtSecret: JWT_SECRET,
+		DbQueries:   dbQeries,
+		jwtSecret:   JWT_SECRET,
+		redisClient: redisCliet,
 	}
 
 	router := http.NewServeMux()
