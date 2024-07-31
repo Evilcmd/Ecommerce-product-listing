@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -22,6 +23,7 @@ func (apiCfg *APIconfig) getAllProducts(res http.ResponseWriter, req *http.Reque
 	if err != nil {
 		respondWithError(res, 406, fmt.Sprintf("error fetching from database: %v", err.Error()))
 	}
+	time.Sleep(time.Second * 10)
 	respondWithJson(res, 200, prods)
 }
 
