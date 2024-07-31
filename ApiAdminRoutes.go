@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/Evilcmd/Ecommerce-product-listing/internal/database/postgres"
+	"github.com/google/uuid"
 )
 
 type productStructure struct {
@@ -12,7 +16,7 @@ type productStructure struct {
 	Price       *int    `json:"price"`
 }
 
-func addProduct(res http.ResponseWriter, req *http.Request) {
+func (apiCfg *APIconfig) addProduct(res http.ResponseWriter, req *http.Request) {
 	productReceived := productStructure{}
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(&productReceived)
@@ -21,12 +25,30 @@ func addProduct(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// below is for dummy api
-	fmt.Println(req.PathValue("id"))
-	respondWithJson(res, 200, productReceived)
+	if productReceived.Name == nil || productReceived.Description == nil || productReceived.Price == nil {
+		respondWithError(res, http.StatusBadRequest, "name, description, and price are required fields")
+		return
+	}
+
+	id := uuid.New()
+
+	params := postgres.AddProductParams{
+		ID:          id,
+		Name:        *productReceived.Name,
+		Description: *productReceived.Description,
+		Price:       int32(*productReceived.Price),
+	}
+
+	product, err := apiCfg.DbQueries.AddProduct(context.Background(), params)
+	if err != nil {
+		respondWithError(res, 406, fmt.Sprintf("error adding to databade: %v", err.Error()))
+		return
+	}
+
+	respondWithJson(res, 200, product)
 }
 
-func updateProduct(res http.ResponseWriter, req *http.Request) {
+func (apiCfg *APIconfig) updateProduct(res http.ResponseWriter, req *http.Request) {
 	productReceived := productStructure{}
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(&productReceived)
@@ -35,24 +57,64 @@ func updateProduct(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// below is for dummy api
-	fmt.Println(req.PathValue("id"))
-	temp := productStructure{}
+	pathid := req.PathValue("id")
+	id, err := uuid.Parse(pathid)
+	if err != nil {
+		respondWithError(res, 406, fmt.Sprintf("error parsing uuid: %v, error message: %v", pathid, err.Error()))
+		return
+	}
+
 	if productReceived.Name != nil {
-		temp.Name = productReceived.Name
+		params := postgres.UpdateProductNameParams{
+			ID:   id,
+			Name: *productReceived.Name,
+		}
+		err = apiCfg.DbQueries.UpdateProductName(context.Background(), params)
+		if err != nil {
+			respondWithError(res, 406, fmt.Sprintf("error updating product name in databse: %v", err.Error()))
+			return
+		}
 	}
 	if productReceived.Description != nil {
-		temp.Description = productReceived.Description
+		params := postgres.UpdateProductDescriptionParams{
+			ID:          id,
+			Description: *productReceived.Description,
+		}
+		err = apiCfg.DbQueries.UpdateProductDescription(context.Background(), params)
+		if err != nil {
+			respondWithError(res, 406, fmt.Sprintf("error updating product description in databse: %v", err.Error()))
+			return
+		}
 	}
 	if productReceived.Price != nil {
-		temp.Price = productReceived.Price
+		params := postgres.UpdateProductPriceParams{
+			ID:    id,
+			Price: int32(*productReceived.Price),
+		}
+		err = apiCfg.DbQueries.UpdateProductPrice(context.Background(), params)
+		if err != nil {
+			respondWithError(res, 406, fmt.Sprintf("error updating product name in databse: %v", err.Error()))
+			return
+		}
 	}
-	respondWithJson(res, 200, temp)
+
+	respondWithJson(res, 200, "OK")
 
 }
 
-func deleteProduct(res http.ResponseWriter, req *http.Request) {
+func (apiCfg *APIconfig) deleteProduct(res http.ResponseWriter, req *http.Request) {
+	pathid := req.PathValue("id")
+	id, err := uuid.Parse(pathid)
+	if err != nil {
+		respondWithError(res, 406, fmt.Sprintf("error parsing uuid: %v, error message: %v", pathid, err.Error()))
+		return
+	}
 
-	// below is for dummy api
-	fmt.Println(req.PathValue("id"))
+	err = apiCfg.DbQueries.DeleteProduct(context.Background(), id)
+	if err != nil {
+		respondWithError(res, 406, fmt.Sprintf("error deleting product from database: %v", err.Error()))
+		return
+	}
+
+	respondWithJson(res, 200, "ok")
 }

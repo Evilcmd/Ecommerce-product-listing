@@ -3,7 +3,7 @@
 //   sqlc v1.26.0
 // source: catalog.sql
 
-package modelsAndFunctions
+package postgres
 
 import (
 	"context"
@@ -41,21 +41,13 @@ func (q *Queries) AddProduct(ctx context.Context, arg AddProductParams) (Catalog
 	return i, err
 }
 
-const deleteProduct = `-- name: DeleteProduct :one
+const deleteProduct = `-- name: DeleteProduct :exec
 DELETE FROM catalog WHERE id=$1
-RETURNING id, name, description, price
 `
 
-func (q *Queries) DeleteProduct(ctx context.Context, id uuid.UUID) (Catalog, error) {
-	row := q.db.QueryRowContext(ctx, deleteProduct, id)
-	var i Catalog
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Description,
-		&i.Price,
-	)
-	return i, err
+func (q *Queries) DeleteProduct(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteProduct, id)
+	return err
 }
 
 const getAllProducts = `-- name: GetAllProducts :many

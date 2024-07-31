@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 func rootEndpoint(res http.ResponseWriter, req *http.Request) {
@@ -14,22 +17,25 @@ func rootEndpoint(res http.ResponseWriter, req *http.Request) {
 	respondWithJson(res, 200, payload)
 }
 
-func getAllProducts(res http.ResponseWriter, req *http.Request) {
-	// dummy
-	temp := make([]productStructure, 3)
-	name := "name"
-	desc := "desc"
-	price := 1
-	temp[0] = productStructure{&name, &desc, &price}
-	temp[1] = productStructure{&name, &desc, &price}
-	temp[2] = productStructure{&name, &desc, &price}
-	respondWithJson(res, 200, temp)
+func (apiCfg *APIconfig) getAllProducts(res http.ResponseWriter, req *http.Request) {
+	prods, err := apiCfg.DbQueries.GetAllProducts(context.Background())
+	if err != nil {
+		respondWithError(res, 406, fmt.Sprintf("error fetching from database: %v", err.Error()))
+	}
+	respondWithJson(res, 200, prods)
 }
 
-func getOneProduct(res http.ResponseWriter, req *http.Request) {
-	name := "name"
-	desc := "desc"
-	price := 1
-	fmt.Println(req.PathValue("id"))
-	respondWithJson(res, 200, productStructure{&name, &desc, &price})
+func (apiCfg *APIconfig) getOneProduct(res http.ResponseWriter, req *http.Request) {
+	pathid := req.PathValue("id")
+	id, err := uuid.Parse(pathid)
+	if err != nil {
+		respondWithError(res, 406, fmt.Sprintf("error parsing uuid: %v, error message: %v", pathid, err.Error()))
+		return
+	}
+	prod, err := apiCfg.DbQueries.GetProduct(context.Background(), id)
+	if err != nil {
+		respondWithError(res, 406, fmt.Sprintf("error fetching from database: %v", err.Error()))
+		return
+	}
+	respondWithJson(res, 200, prod)
 }

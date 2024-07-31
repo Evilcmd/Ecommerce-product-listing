@@ -18,6 +18,5 @@ UPDATE catalog SET description=$2 WHERE id=$1;
 -- name: UpdateProductPrice :exec
 UPDATE catalog SET price=$2 WHERE id=$1;
 
--- name: DeleteProduct :one
-DELETE FROM catalog WHERE id=$1
-RETURNING *;
+-- name: DeleteProduct :exec
+DELETE FROM catalog WHERE id=$1;
